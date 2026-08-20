@@ -84,7 +84,7 @@ There's no guarantee that it'll be little-endian or have the correct endianness 
 
 ### Licensing
 
-All code and documentation I have placed in the public domain. See `LICENSE` for details. Credit is appreciated.
+All code and documentation in this repository I have placed in the public domain. See `LICENSE` for details. Credit is appreciated though not required.
 
 ### Disclaimer
 
