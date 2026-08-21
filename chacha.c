@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#define ROTL32(x, r) ((uint32_t)(x) << ((r) & 31) | (uint32_t)(x) >> ((32 - (r)) & 31))
+#define ROTL32(x, n) ((x << n) | (x >> (32 - n)))
 
 #define CHACHA_QR(a, b, c, d) { a += b; d ^= a; d = ROTL32(d,16);\
 	c += d; b ^= c; b = ROTL32(b, 12);\
