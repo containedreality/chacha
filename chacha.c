@@ -1,5 +1,7 @@
+#if defined(__AVX2__)
 #include <immintrin.h>
-#include <string.h>
+#endif
+
 #include <stdint.h>
 
 #define ROTL32(x, n) ((x << n) | (x >> (32 - n)))
@@ -8,6 +10,18 @@
 	c += d; b ^= c; b = ROTL32(b, 12);\
 	a += b; d ^= a; d = ROTL32(d, 8);\
 	c += d; b ^= c; b = ROTL32(b, 7); }
+
+static void* mymemcpy(void* dst, const void* src, uint64_t n)
+{
+	char* dest = (char*)dst;
+	const char* source = (char*)src;
+
+	for(uint64_t i = 0; i < n; i++) {
+		dest[i] = source[i];
+	}
+
+	return dest;
+}
 	
 void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, int rounds)
 {
@@ -24,15 +38,15 @@ void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, in
 		_mm256_loadu_si256((const __m256i*)key)
 	);
 	#else
-	memcpy(&state[4], key, 8 * sizeof(uint32_t));
+	mymemcpy(&state[4], key, 8 * sizeof(uint32_t));
 	#endif
 	
 	state[12] = ctr;
 
-	memcpy(&state[13], nonce, 3 * sizeof(uint32_t));
+	mymemcpy(&state[13], nonce, 3 * sizeof(uint32_t));
 
 	uint32_t initial_state[16];
-	memcpy(initial_state, state, 64);
+	mymemcpy(initial_state, state, 64);
 	
 	for(int i = 0; i < rounds / 2; i++) {
 		// odd round
@@ -62,7 +76,7 @@ void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, in
 	}
 	#endif
 
-	memcpy(block, state, 64);
+	mymemcpy(block, state, 64);
 }
 
 uint32_t chacha_xor(uint8_t* key, uint8_t* nonce, uint8_t* buf, uint64_t bufsize, uint32_t ctr, int rounds)
