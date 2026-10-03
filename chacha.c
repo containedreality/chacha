@@ -11,6 +11,10 @@
 	a += b; d ^= a; d = ROTL32(d, 8);\
 	c += d; b ^= c; b = ROTL32(b, 7); }
 
+/*
+the purpose of our own memcpy function is to enhance portability by
+eliminating the dependency of libc, and working with: -nostdlib -ffreestanding
+*/
 static void* mymemcpy(void* dst, const void* src, uint64_t n)
 {
 	char* dest = (char*)dst;
