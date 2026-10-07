@@ -8,10 +8,6 @@ See [test.c](test.c)
 
 ## Implementation Notes
 
-### Endianness
-
-There's no guarantee that it'll be little-endian or have the correct endianness on all platforms.
-
 ### Licensing
 
 All code and documentation in this repository I have placed in the public domain. See `LICENSE` for details. Credit is appreciated though not required.

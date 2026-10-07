@@ -11,6 +11,22 @@
 	a += b; d ^= a; d = ROTL32(d, 8);\
 	c += d; b ^= c; b = ROTL32(b, 7); }
 
+static inline void uint32_to_bytesle(uint32_t src, uint8_t* dst)
+{
+	dst[0] = (uint8_t)(src & 0xFF);
+	dst[1] = (uint8_t)((src >> 8) & 0xFF);
+	dst[2] = (uint8_t)((src >> 16) & 0xFF);
+	dst[3] = (uint8_t)((src >> 24) & 0xFF);
+}
+
+static inline uint32_t bytes_to_uint32le(uint8_t* src)
+{
+	return (uint32_t)src[0]          |
+			((uint32_t)src[1] << 8)  |
+			((uint32_t)src[2] << 16) |
+			((uint32_t)src[3] << 24);
+}
+
 /*
 the purpose of our own memcpy function is to enhance portability by
 eliminating the dependency of libc, and working with: -nostdlib -ffreestanding
@@ -30,7 +46,7 @@ static void* mymemcpy(void* dst, const void* src, uint64_t n)
 void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, int rounds)
 {
 	uint32_t state[16];
-	
+
 	state[0] = 0x61707865;
 	state[1] = 0x3320646e;
 	state[2] = 0x79622d32;
@@ -41,25 +57,29 @@ void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, in
 		(__m256i*)&state[4],
 		_mm256_loadu_si256((const __m256i*)key)
 	);
-	#else
-	mymemcpy(&state[4], key, 8 * sizeof(uint32_t));
 	#endif
+
+	for(uint32_t i = 0; i < 8; i++) {
+		state[4+i] = bytes_to_uint32le(key + (i*4));
+	}
 	
 	state[12] = ctr;
 
-	mymemcpy(&state[13], nonce, 3 * sizeof(uint32_t));
+	for(uint32_t i = 0; i < 3; i++) {
+		state[13+i] = bytes_to_uint32le(nonce + (i*4));
+	}
 
 	uint32_t initial_state[16];
 	mymemcpy(initial_state, state, 64);
 	
 	for(int i = 0; i < rounds / 2; i++) {
-		// odd round
+		// column rounds
 		CHACHA_QR(state[0], state[4], state[8] , state[12]);
 		CHACHA_QR(state[1], state[5], state[9] , state[13]);
 		CHACHA_QR(state[2], state[6], state[10], state[14]);
 		CHACHA_QR(state[3], state[7], state[11], state[15]);
 
-		// even round
+		// diagonal rounds
 		CHACHA_QR(state[0], state[5], state[10], state[15]);
 		CHACHA_QR(state[1], state[6], state[11], state[12]);
 		CHACHA_QR(state[2], state[7], state[8] , state[13]);
@@ -80,7 +100,9 @@ void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, in
 	}
 	#endif
 
-	mymemcpy(block, state, 64);
+	for(int i = 0; i < 16; i++) {
+		uint32_to_bytesle(state[i], block + (i*4));
+	}
 }
 
 uint32_t chacha_xor(uint8_t* key, uint8_t* nonce, uint8_t* buf, uint64_t bufsize, uint32_t ctr, int rounds)
