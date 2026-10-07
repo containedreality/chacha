@@ -57,11 +57,11 @@ void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, in
 		(__m256i*)&state[4],
 		_mm256_loadu_si256((const __m256i*)key)
 	);
-	#endif
-
+	#else
 	for(uint32_t i = 0; i < 8; i++) {
 		state[4+i] = bytes_to_uint32le(key + (i*4));
 	}
+	#endif
 	
 	state[12] = ctr;
 
