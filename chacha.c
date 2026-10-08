@@ -2,6 +2,7 @@
 #include <immintrin.h>
 #endif
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define ROTL32(x, n) ((x << n) | (x >> (32 - n)))
@@ -52,16 +53,9 @@ void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, in
 	state[2] = 0x79622d32;
 	state[3] = 0x6b206574;
 	
-	#if defined(__AVX2__)
-	_mm256_storeu_si256(
-		(__m256i*)&state[4],
-		_mm256_loadu_si256((const __m256i*)key)
-	);
-	#else
 	for(uint32_t i = 0; i < 8; i++) {
 		state[4+i] = bytes_to_uint32le(key + (i*4));
 	}
-	#endif
 	
 	state[12] = ctr;
 
@@ -86,19 +80,9 @@ void chacha_block(uint8_t* key, uint8_t* nonce, uint32_t ctr, uint8_t* block, in
 		CHACHA_QR(state[3], state[4], state[9] , state[14]);
 	}
 
-	#if defined(__AVX2__)
-	__m256i s1 = _mm256_loadu_si256((__m256i*)&state[0]);
-	__m256i i1 = _mm256_loadu_si256((__m256i*)&initial_state[0]);
-	_mm256_storeu_si256((__m256i*)&state[0], _mm256_add_epi32(s1, i1));
-
-	__m256i s2 = _mm256_loadu_si256((__m256i*)&state[8]);
-	__m256i i2 = _mm256_loadu_si256((__m256i*)&initial_state[8]);
-	_mm256_storeu_si256((__m256i*)&state[8], _mm256_add_epi32(s2, i2));
-	#else
 	for(int i = 0; i < 16; i++) {
 		state[i] += initial_state[i];
 	}
-	#endif
 
 	for(int i = 0; i < 16; i++) {
 		uint32_to_bytesle(state[i], block + (i*4));
@@ -110,35 +94,7 @@ uint32_t chacha_xor(uint8_t* key, uint8_t* nonce, uint8_t* buf, uint64_t bufsize
 	uint8_t block[64];
 	uint64_t xorred = 0;
 	
-	#if defined(__AVX2__)
-	while (xorred + 64 <= bufsize) {
-		chacha_block(key, nonce, ctr, block, rounds);
-		
-		__m256i k0 = _mm256_load_si256((__m256i*)(block +  0));
-		__m256i k1 = _mm256_load_si256((__m256i*)(block + 32));
-		__m256i p0 = _mm256_loadu_si256((__m256i*)(buf + xorred +  0));
-		__m256i p1 = _mm256_loadu_si256((__m256i*)(buf + xorred + 32));
-		
-		p0 = _mm256_xor_si256(p0, k0);
-		p1 = _mm256_xor_si256(p1, k1);
-		
-		_mm256_storeu_si256((__m256i*)(buf + xorred +  0), p0);
-		_mm256_storeu_si256((__m256i*)(buf + xorred + 32), p1);
-		
-		xorred += 64;
-		ctr++;
-	}
-	
-	if (xorred < bufsize) {
-		chacha_block(key, nonce, ctr, block, rounds);
-		
-		for (int i = 0; xorred < bufsize; i++, xorred++) {
-			buf[xorred] ^= block[i];
-		}
-		ctr++;
-	}
-	#else
-	for(;;) {
+	while(true) {
 		chacha_block(key, nonce, ctr, block, rounds);
 		
 		for(int i = 0; i < 64; i++) {
@@ -152,7 +108,6 @@ uint32_t chacha_xor(uint8_t* key, uint8_t* nonce, uint8_t* buf, uint64_t bufsize
 		
 		ctr++;
 	}
-	#endif
 	
 	return ctr;
 }
