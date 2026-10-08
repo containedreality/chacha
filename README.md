@@ -14,11 +14,9 @@ All code and documentation in this repository I have placed in the public domain
 
 ### Disclaimer
 
-You probably should not use this in production and/or security critical environments without thorough testing. This is primarily for educational and insecure purposes (such as a non-cryptographic PRNG).
+You probably should not use this in security critical environments without thorough testing and auditing.
 
-This implementation isn't exactly optimized. Also while hard to mess up ChaCha (and I don't think I did), it's not worth the risk.
-
-Instead if you plan on using ChaCha20, I recommend using one of the following libraries:
+Instead if you plan on using ChaCha20 in production, I recommend using one of the following libraries:
 
 * [libsodium](https://libsodium.org/)
 * [OpenSSL](https://openssl.org/)
