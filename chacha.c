@@ -1,7 +1,3 @@
-#if defined(__AVX2__)
-#include <immintrin.h>
-#endif
-
 #include <stdbool.h>
 #include <stdint.h>
 

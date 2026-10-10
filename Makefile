@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -Wall -std=c17 -fsanitize=address,undefined -mavx2
+CFLAGS = -O2 -Wall -std=c17 -fsanitize=address,undefined 
 
 CC_BE = mips-linux-gnu-gcc-14
 CFLAGS_BE = -O2 -Wall -std=c17 -static
